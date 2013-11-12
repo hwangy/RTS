@@ -190,10 +190,10 @@ function Player(posX, posY) {
 	this.contactSpace = new Array(); //[gridArray[this.currentGrid]];
 	gridArray[this.currentGrid].add(this);
 	game.square(this.posX, this.posY, this.size, this.size, "#00FF00");
-	this.newGrid = parseInt((this.posX+this.size/2)/50,10)*10 + parseInt((this.posY+this.size/2)/50,10);
 };
 
 Player.prototype.update = function() {
+	this.highlightClose();	
 	if (!this.circle) {
 		game.square(this.posX, this.posY, this.size, this.size, '#00FF00');
 		if (this.selected) {
@@ -220,8 +220,6 @@ Player.prototype.update = function() {
 			}
 			this.posX += this.velX;
 			this.posY += this.velY;
-			this.newGrid = parseInt((this.posX+this.size/2)/50,10)*10 + parseInt((this.posY+this.size/2)/50,10);
-			this.highlightClose();
 			if(this.checkContact()){
 				this.posX -= this.velX;
 				this.posY -= this.velY;
@@ -238,6 +236,8 @@ Player.prototype.update = function() {
 		this.mouse = !this.mouse;
 		keyArray[4]=0;
 	}
+	this.newGrid = parseInt((this.posX+this.size/2)/50,10)*10 + parseInt((this.posY+this.size/2)/50,10);
+	this.highlightClose();
 	if (this.newGrid != this.currentGrid) {
 		gridArray[this.newGrid].add(this);
 		gridArray[this.currentGrid].remove(this);
@@ -304,6 +304,7 @@ Player.prototype.checkContact = function() {
 	var string = "";
 	var contactBodies = new Array();
 	for (var x = 0; x < this.contactSpace.length; x++) {
+
 		var c = this.contactSpace[x];
 		if (c == this.currentGrid) {
 			for (var i = 0; i < gridArray[c].bodies.length; i++) {
@@ -318,7 +319,7 @@ Player.prototype.checkContact = function() {
 				contactBodies.push(gridArray[c].bodies[i]);
 			}
 		}
-		string += gridArray[c].occupants + ", ";
+		string += this.contactSpace[x] + ": " + gridArray[c].occupants + ", ";
 	}
 	if (this.startGrid == 55) document.getElementById("coord").innerHTML = string;
 	var x;
