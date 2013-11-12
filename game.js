@@ -457,3 +457,4 @@ this.canvas.addEventListener('mousemove', this.updateLocation, false);
 addEventListener('keydown', this.processKey, false);
 
 addEventListener('keyup', this.processKeyUp, false);
+game.update();
