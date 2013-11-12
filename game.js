@@ -209,14 +209,12 @@ Player.prototype.update = function() {
 		var deltaY = this.currentDesY - this.posY;
 		if(deltaX != 0 || deltaY != 0){//todo: Recalculate direction only when necessary
 			var dist = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
-			this.velX = deltaX/dist;
-			this.velY = deltaY/dist;
 			if(dist > this.vel){
-				this.velX *= this.vel;
-				this.velY *= this.vel;
+				this.velX = deltaX/dist*this.vel;
+				this.velY = deltaY/dist*this.vel;
 			}else{
-				this.velX *= dist;
-				this.velY *= dist;
+				this.velX = deltaX;
+				this.velY = deltaY;
 			}
 			this.posX += this.velX;
 			this.posY += this.velY;
@@ -237,12 +235,12 @@ Player.prototype.update = function() {
 		keyArray[4]=0;
 	}
 	this.newGrid = parseInt((this.posX+this.size/2)/50,10)*10 + parseInt((this.posY+this.size/2)/50,10);
-	this.highlightClose();
 	if (this.newGrid != this.currentGrid) {
 		gridArray[this.newGrid].add(this);
 		gridArray[this.currentGrid].remove(this);
 		this.currentGrid = this.newGrid;
 	}
+	this.highlightClose();
 };
 
 Player.prototype.highlightClose = function() {
@@ -290,13 +288,13 @@ Player.prototype.highlightClose = function() {
 		if (indexArray[j] > -1 && indexArray[j] < 100) gridArray[indexArray[j]].highlight("#ff0000");
 		if (indexArray[k] > -1 && indexArray[k] < 100) gridArray[indexArray[k]].highlight("#ff0000");
 	}
-	if (this.newGrid != this.currentGrid || this.newGrid == this.startGrid) {
+	//if (this.newGrid != this.currentGrid || this.newGrid == this.startGrid) {
 		while (this.contactSpace.length > 0) this.contactSpace.pop();
 		this.contactSpace.push(this.newGrid);
 		this.contactSpace.push(indexArray[i]);
 		this.contactSpace.push(indexArray[j]);
 		this.contactSpace.push(indexArray[k]);
-	}
+	//}
 };
 
 Player.prototype.checkContact = function() {
