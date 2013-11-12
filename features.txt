@@ -1,0 +1,52 @@
+Graphics:
+	Very Large (standardized) pixel size (10x10 / unit)
+		Don't snap to screen
+	Low-saturation art, possibly dependent on zoom level
+	Beautiful, gorgeous, psychadelic explosions
+	
+
+Construction:
+	Building restricted only by where units can get and survive
+	Unit and Building construction identical
+	constructors assigned automatically
+
+Resources:
+	Oil Well Buildings:
+		Minor Defense
+		Stop hostile resource taking
+		Increase on-site storage capacity
+	Resources are tangible. Once converted to energy (and stored), they are accessible anywhere
+
+Research:
+	Applies instantly
+	Can dump as many marks into a given tech as you want, but diminishing returns (Roman Numerals?)
+
+Radar:
+	As in Warzone
+	increase visibility of radar alerts
+
+Terrain:
+	Random Generated Maps?
+
+	Move Speed
+	Visibility
+	Defense Bonus
+	Shoot Through-ability
+
+	Passable
+	Impassable
+	Dense Forest
+	Roads
+
+General Mechanics:
+	Units level
+	Repairs done by factories
+
+Chronological goals:
+	contact listening
+	path finding
+	unit production
+	resource gathering
+	teams
+	attacking
+	
