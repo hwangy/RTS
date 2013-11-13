@@ -127,8 +127,12 @@ game = {
 		constructGrid();
 		started = true;
 		//parseMap();
-		playerArray.push(new Player(canvas.width/2, canvas.height/2));
-		playerArray.push(new Player(canvas.width/4, canvas.height/4));
+		playerArray.push(new Player(Math.random()*canvas.width, Math.random()*canvas.height));
+		playerArray.push(new Player(Math.random()*canvas.width, Math.random()*canvas.height));
+		playerArray.push(new Player(Math.random()*canvas.width, Math.random()*canvas.height));
+		playerArray.push(new Player(Math.random()*canvas.width, Math.random()*canvas.height));
+		playerArray.push(new Player(Math.random()*canvas.width, Math.random()*canvas.height));
+		playerArray.push(new Player(Math.random()*canvas.width, Math.random()*canvas.height));
 	},
 
 	updateDebug: function() {
@@ -301,17 +305,16 @@ Player.prototype.update = function() {
 		game.circle(this.posX, this.posY, 2, '#FF0000');
 	//} else game.circle(this.posX, this.posY, this.size/2, '#00FF00');
 	if (this.mouse) {
-		var deltaX = this.currentDesX - this.posX;
-		var deltaY = this.currentDesY - this.posY;
-		if(deltaX != 0 || deltaY != 0){//todo: Recalculate direction only when necessary
-			var dist = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
-			var vel = dist > this.vel ? this.vel : dist;
-			if(!this.turnTowardsDest(Math.atan2(deltaY, deltaX))) vel = -vel;
+		if(this.confused){
+			this.deltaAngle = (Math.random() >= 0.5)?0.12:-0.12;
+			this.angle += this.deltaAngle;
+			this.angleCos = Math.cos(this.angle);
+			this.angleSin = Math.sin(this.angle);
+			var vel = (Math.random() >= 0.5)?this.vel:-this.vel;
 			this.velX = this.angleCos*vel;
 			this.velY = this.angleSin*vel;
 			this.posX += this.velX;
 			this.posY += this.velY;
-			this.updateCorners();
 			if(this.checkContact()){
 				this.posX -= this.velX;
 				this.posY -= this.velY;
@@ -319,6 +322,28 @@ Player.prototype.update = function() {
 				this.angleSin = Math.sin(this.angle);
 				this.angleCos = Math.cos(this.angle);
 				this.updateCorners();
+			}else this.confused = false;
+		}else{
+			var deltaX = this.currentDesX - this.posX;
+			var deltaY = this.currentDesY - this.posY;
+			if(deltaX != 0 || deltaY != 0){//todo: Recalculate direction only when necessary
+				var dist = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
+				var vel = dist > this.vel ? this.vel : dist;
+				if(!this.turnTowardsDest(Math.atan2(deltaY, deltaX))) vel = -vel;
+				this.velX = this.angleCos*vel;
+				this.velY = this.angleSin*vel;
+				this.posX += this.velX;
+				this.posY += this.velY;
+				this.updateCorners();
+				if(this.checkContact()){
+					this.posX -= this.velX;
+					this.posY -= this.velY;
+					this.angle -= this.deltaAngle;
+					this.angleSin = Math.sin(this.angle);
+					this.angleCos = Math.cos(this.angle);
+					this.updateCorners();
+					this.confused = true;
+				}
 			}
 		}
 	} else {
