@@ -322,7 +322,7 @@ Player.prototype.checkContact = function() {
 	if (this.startGrid == 55) document.getElementById("coord").innerHTML = string;
 	var x;
 	var y;
-	this.circle = check;
+	//this.circle = check;
 	if (check) {
 		for (var i = 0; i < contactBodies.length; i++) {
 			if(this.checkContactSub(contactBodies[i]) || contactBodies[i].checkContactSub(this)) return true;
