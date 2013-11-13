@@ -12,7 +12,8 @@ var gridArray = new Array();
 */
 var playerArray = new Array();
 
-function Grid(initX,initY,incr) {
+function Grid(initX,initY,incr, passable) {
+	this.passable = passable
 	this.initX = initX;
 	this.initY = initY;
 	this.finalX = initX + incr;
