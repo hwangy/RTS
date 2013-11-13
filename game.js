@@ -264,17 +264,7 @@ Player.prototype.turnTowardsDest = function(destAngle) {
 	}
 	this.angleSin = Math.sin(this.angle);
 	this.angleCos = Math.cos(this.angle);
-	if(Math.abs(destAngle)<Math.PI/2) return true;
-	else{
-		this.updateCorners(); // Usually done after we move, but we ain't movin'...
-		if(this.checkContact()){
-			this.angle -= this.deltaAngle;
-			this.angleSin = Math.sin(this.angle);
-			this.angleCos = Math.cos(this.angle);
-			this.updateCorners();
-		}
-		return false;
-	}
+	return Math.abs(destAngle)<Math.PI/2;
 };
 
 Player.prototype.updateCorners = function() {
@@ -298,15 +288,12 @@ Player.prototype.update = function() {
 	if (this.mouse) {
 		var deltaX = this.currentDesX - this.posX;
 		var deltaY = this.currentDesY - this.posY;
-		if((deltaX != 0 || deltaY != 0) && this.turnTowardsDest(Math.atan2(deltaY, deltaX))){//todo: Recalculate direction only when necessary
+		if(deltaX != 0 || deltaY != 0){//todo: Recalculate direction only when necessary
 			var dist = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
-			if(dist > this.vel){
-				this.velX = this.angleCos*this.vel;
-				this.velY = this.angleSin*this.vel;
-			}else{
-				this.velX = this.angleCos*dist;
-				this.velY = this.angleSin*dist;
-			}
+			var vel = dist > this.vel ? this.vel : dist;
+			if(!this.turnTowardsDest(Math.atan2(deltaY, deltaX))) vel = -vel;
+			this.velX = this.angleCos*vel;
+			this.velY = this.angleSin*vel;
 			this.posX += this.velX;
 			this.posY += this.velY;
 			this.updateCorners();
@@ -377,13 +364,11 @@ Player.prototype.highlightClose = function() {
 		if (indexArray[j] > -1 && indexArray[j] < 100) gridArray[indexArray[j]].highlight("#ff0000");
 		if (indexArray[k] > -1 && indexArray[k] < 100) gridArray[indexArray[k]].highlight("#ff0000");
 	}
-	//if (this.newGrid != this.currentGrid || this.newGrid == this.startGrid) {
-		while (this.contactSpace.length > 0) this.contactSpace.pop();
-		this.contactSpace.push(this.newGrid);
-		this.contactSpace.push(indexArray[i]);
-		this.contactSpace.push(indexArray[j]);
-		this.contactSpace.push(indexArray[k]);
-	//}
+	while (this.contactSpace.length > 0) this.contactSpace.pop();
+	this.contactSpace.push(this.newGrid);
+	this.contactSpace.push(indexArray[i]);
+	this.contactSpace.push(indexArray[j]);
+	this.contactSpace.push(indexArray[k]);
 };
 
 Player.prototype.checkContact = function() {
