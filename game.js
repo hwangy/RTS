@@ -105,8 +105,8 @@ game = {
 	fps: 60,
 	started: false,
 	frame: 0,
-	clickStart: 0,
-	clickEnd: 0,
+	//clickStart: 0,
+	//clickEnd: 0,
 	
 	start: function() {
 		started = true;
@@ -193,7 +193,7 @@ game = {
 		}
 		if (game.mouseOrigin.x != -100 && game.mouseOrigin.y != -100) {
 			var time = new Date().getTime();
-			if (time - game.clickStart > 250 ) game.selectUnits(game.mouseOrigin, game.mouseLocation);
+			if (time - game.clickStart > 250 || (game.mouseLocation.x-game.mouseOrigin.x)*(game.mouseLocation.y-game.mouseOrigin.y)>500) game.selectUnits(game.mouseOrigin, game.mouseLocation);
 		}
 		game.updateDebug();
 		//document.getElementById("other").innerHTML = "{ " + game.mouseLocation.x +" , " + game.mouseLocation.y + " + { " + game.mouseOrigin.x + ", " + game.mouseOrigin.y + "} -> " + game.drawSelection;	
@@ -209,50 +209,108 @@ function Player(posX, posY) {
 	this.posX = this.currentDesX;
 	this.posY = this.currentDesY;
 	this.size = 15;
-	this.corners = [{x:this.posX, y:this.posY},{x:this.posX+this.size,y:this.posY}, {x:this.posX+this.size,y:this.posY+this.size},{x:this.posX, y:this.posY+this.size}];
+	this.corners = [{x:this.posX-this.size, y:this.posY+this.size},{x:this.posX+this.size,y:this.posY+this.size}, {x:this.posX+this.size,y:this.posY-this.size},{x:this.posX-this.size, y:this.posY-this.size}];
 	this.vel = 2;
 	this.velX = 0;
 	this.velY = 0;
 	this.circle = false;
 	this.mouse = true;
 	this.selected = false;
-	this.currentGrid = parseInt((this.posX+this.size/2)/50,10) + parseInt((this.posY+this.size/2)/50,10)*10;
+	this.currentGrid = parseInt(this.posX/50,10) + parseInt(this.posY/50,10)*10;
 	this.startGrid = this.currentGrid;
 	this.newGrid = "";
+	this.angle = 0;
+	this.angleSin = 0;
+	this.angleCos = 1;
+	this.deltaAngle = 0;//Hehehe bad coding.
 	this.contactSpace = new Array(); //[gridArray[this.currentGrid]];
 	gridArray[this.currentGrid].add(this);
 	game.square(this.posX, this.posY, this.size, this.size, "#00FF00");
 };
 
+Player.prototype.render = function() {
+	context.beginPath();
+	context.fillStyle = '#00FF00';
+	context.moveTo(this.corners[0].x, this.corners[0].y);
+	for(var c = 1; c < this.corners.length; c++) context.lineTo(this.corners[c].x, this.corners[c].y);
+	context.closePath();
+	context.fill();
+	if (this.selected) {
+		context.beginPath();
+		context.lineWidth = 2;
+		context.strokeStyle = '#000000';
+		context.moveTo(this.corners[0].x, this.corners[0].y);
+		for(var c = 1; c < this.corners.length; c++) context.lineTo(this.corners[c].x, this.corners[c].y);
+		context.closePath();
+		context.stroke();
+	}
+};
+
+Player.prototype.turnTowardsDest = function(destAngle) {
+	destAngle -= this.angle;
+	while(destAngle > Math.PI) destAngle -= Math.PI*2;
+	while(destAngle < -Math.PI) destAngle += Math.PI*2;
+	if(Math.abs(destAngle) < 0.12){
+		this.angle += destAngle;
+		this.deltaAngle = destAngle;
+	}else{
+		if(destAngle > 0){
+			this.angle += 0.12;
+			this.deltaAngle = 0.12;
+		}else{
+			this.angle -= 0.12;
+			this.deltaAngle = -0.12;
+		}
+	}
+	this.angleSin = Math.sin(this.angle);
+	this.angleCos = Math.cos(this.angle);
+	if(Math.abs(destAngle)<Math.PI/2) return true;
+	else{
+		this.updateCorners(); // Usually done after we move, but we ain't movin'...
+		if(this.checkContact()){
+			this.angle -= this.deltaAngle;
+			this.angleSin = Math.sin(this.angle);
+			this.angleCos = Math.cos(this.angle);
+			this.updateCorners();
+		}
+		return false;
+	}
+};
+
+Player.prototype.updateCorners = function() {
+	var dx = this.angleCos*this.size;
+	var dy = this.angleSin*this.size;
+	this.corners = [{x:this.posX-dx-dy, y:this.posY+dx-dy},{x:this.posX+dx-dy,y:this.posY+dx+dy}, {x:this.posX+dx+dy,y:this.posY-dx+dy},{x:this.posX-dx+dy, y:this.posY-dx-dy}];
+};
+
 Player.prototype.update = function() {
 	this.highlightClose();	
 	if (!this.circle) {
-		game.square(this.posX, this.posY, this.size, this.size, '#00FF00');
-		if (this.selected) {
-			context.rect(this.posX, this.posY, this.size, this.size);
-			context.lineWidth = 2;
-			context.strokeStyle = '#000000';
-			context.stroke();
-		}
-		game.circle(this.posX+this.size/2, this.posY+this.size/2, 2, '#FF0000');
+		this.render();
+		game.circle(this.posX, this.posY, 2, '#FF0000');
 	} else game.circle(this.posX, this.posY, this.size/2, '#00FF00');
 	if (this.mouse) {
 		var deltaX = this.currentDesX - this.posX;
 		var deltaY = this.currentDesY - this.posY;
-		if(deltaX != 0 || deltaY != 0){//todo: Recalculate direction only when necessary
+		if((deltaX != 0 || deltaY != 0) && this.turnTowardsDest(Math.atan2(deltaY, deltaX))){//todo: Recalculate direction only when necessary
 			var dist = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
 			if(dist > this.vel){
-				this.velX = deltaX/dist*this.vel;
-				this.velY = deltaY/dist*this.vel;
+				this.velX = this.angleCos*this.vel;
+				this.velY = this.angleSin*this.vel;
 			}else{
-				this.velX = deltaX;
-				this.velY = deltaY;
+				this.velX = this.angleCos*dist;
+				this.velY = this.angleSin*dist;
 			}
 			this.posX += this.velX;
 			this.posY += this.velY;
+			this.updateCorners();
 			if(this.checkContact()){
 				this.posX -= this.velX;
 				this.posY -= this.velY;
+				this.angle -= this.deltaAngle;
+				this.angleSin = Math.sin(this.angle);
+				this.angleCos = Math.cos(this.angle);
+				this.updateCorners();
 			}
 		}
 	} else {
@@ -266,7 +324,7 @@ Player.prototype.update = function() {
 		this.mouse = !this.mouse;
 		keyArray[4]=0;
 	}
-	this.newGrid = parseInt((this.posX+this.size/2)/50,10) + parseInt((this.posY+this.size/2)/50,10)*10;
+	this.newGrid = parseInt(this.posX/50,10) + parseInt(this.posY/50,10)*10;
 	if (this.newGrid != this.currentGrid) {
 		gridArray[this.newGrid].add(this);
 		gridArray[this.currentGrid].remove(this);
@@ -277,10 +335,10 @@ Player.prototype.update = function() {
 
 Player.prototype.highlightClose = function() {
 	gridArray[this.currentGrid].highlight("#000000");
-	var inX = ((this.posX+this.size/2)%game.gridSize);
-	var inY = ((this.posY+this.size/2)%game.gridSize);
+	var inX = (this.posX%game.gridSize);
+	var inY = (this.posY%game.gridSize);
 	var yComp = parseInt(this.currentGrid/10,10);
-	var xComp = this.currentGrid%10; 
+	var xComp = this.currentGrid%10;
 	/*
 	 * | 7 0 1 |
 	 * | 6 H 2 |
@@ -366,11 +424,16 @@ Player.prototype.checkContact = function() {
 Player.prototype.checkContactSub = function(other){
 	var x;
 	var y;
+	var a;
+	var b;
 	for(var c = 0; c < other.corners.length; c++){
-		x = other.corners[c].x - this.posX - this.size/2;
-		y = other.corners[c].y - this.posY - this.size/2;
-		if(Math.abs(x) < this.size/2 && Math.abs(y) < this.size/2) return true;
+		x = other.corners[c].x - this.posX;
+		y = other.corners[c].y - this.posY;
+		a = this.angleCos*x + this.angleSin*y;
+		b = -this.angleCos*y + this.angleSin*x;
+		if(Math.abs(a) < this.size && Math.abs(b) < this.size) return true;
 	}
+	return false;
 }
 
 Array.prototype.remove = function(index) {
@@ -401,7 +464,7 @@ function maintainZoom() {
 
 function processMouse(e) {
 	if (e.button == 0) {
-		//document.getElementById("other").innerHTML = "START";
+		document.getElementById("other").innerHTML = "START";
 		game.clickStart = new Date().getTime();
 		game.drawSelection = true;
 		if (game.mouseOrigin.x == -100 && game.mouseOrigin.y == -100) { 
@@ -417,14 +480,14 @@ function processMouse(e) {
 
 function endProcessMouse(e) {
 	if (e.button == 0) {
-		game.clickEnd = new Date().getTime();
-		if (game.clickEnd - game.clickStart >= 250) for (var x = 0; x < playerArray.length; x++) playerArray[x].selected = false;
+		game.clickEnd = new Date().getTime(); 
+		if (game.clickEnd - game.clickStart >= 250 && !(game.mouseLocation.x-game.mouseOrigin.x)*(game.mouseLocation.y-game.mouseOrigin.y)<=500) for (var x = 0; x < playerArray.length; x++) playerArray[x].selected = false;
 		game.drawSelection = false;
-		if (game.clickEnd - game.clickStart < 250) {
+		if (game.clickEnd - game.clickStart < 250 && (game.mouseLocation.x-game.mouseOrigin.x)*(game.mouseLocation.y-game.mouseOrigin.y)<=500) {
 			for (var x = 0; x < playerArray.length; x++) {
 				if (playerArray[x].selected) {
-					playerArray[x].currentDesX = canvas.relMouseCoord(e).x-playerArray[x].size/2;
-					playerArray[x].currentDesY = canvas.relMouseCoord(e).y-playerArray[x].size/2;
+					playerArray[x].currentDesX = canvas.relMouseCoord(e).x;
+					playerArray[x].currentDesY = canvas.relMouseCoord(e).y;
 				}
 			}
 		} else {
