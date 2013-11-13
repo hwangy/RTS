@@ -124,8 +124,8 @@ game = {
 	//clickEnd: 0,
 	
 	start: function() {
-		started = true;
 		constructGrid();
+		started = true;
 		//parseMap();
 		playerArray.push(new Player(canvas.width/2, canvas.height/2));
 		playerArray.push(new Player(canvas.width/4, canvas.height/4));
@@ -223,7 +223,7 @@ function Player(posX, posY) {
 	this.currentDesY = posY;
 	this.posX = this.currentDesX;
 	this.posY = this.currentDesY;
-	this.size = 15;
+	this.size = 6;
 	this.corners = [{x:this.posX-this.size, y:this.posY+this.size},{x:this.posX+this.size,y:this.posY+this.size}, {x:this.posX+this.size,y:this.posY-this.size},{x:this.posX-this.size, y:this.posY-this.size}];
 	this.vel = 2;
 	this.velX = 0;
@@ -299,11 +299,17 @@ Player.prototype.updateCorners = function() {
 };
 
 Player.prototype.update = function() {
+	this.newGrid = parseInt(this.posX/50,10) + parseInt(this.posY/50,10)*10;
+	if (this.newGrid != this.currentGrid) {
+		gridArray[this.newGrid].add(this);
+		gridArray[this.currentGrid].remove(this);
+		this.currentGrid = this.newGrid;
+	}
 	this.highlightClose();	
-	if (!this.circle) {
+	//if (!this.circle) {
 		this.render();
 		game.circle(this.posX, this.posY, 2, '#FF0000');
-	} else game.circle(this.posX, this.posY, this.size/2, '#00FF00');
+	//} else game.circle(this.posX, this.posY, this.size/2, '#00FF00');
 	if (this.mouse) {
 		var deltaX = this.currentDesX - this.posX;
 		var deltaY = this.currentDesY - this.posY;
@@ -339,13 +345,6 @@ Player.prototype.update = function() {
 		this.mouse = !this.mouse;
 		keyArray[4]=0;
 	}
-	this.newGrid = parseInt(this.posX/50,10) + parseInt(this.posY/50,10)*10;
-	if (this.newGrid != this.currentGrid) {
-		gridArray[this.newGrid].add(this);
-		gridArray[this.currentGrid].remove(this);
-		this.currentGrid = this.newGrid;
-	}
-	this.highlightClose();
 };
 
 Player.prototype.highlightClose = function() {
@@ -407,7 +406,6 @@ Player.prototype.checkContact = function() {
 	var string = "";
 	var contactBodies = new Array();
 	for (var x = 0; x < this.contactSpace.length; x++) {
-
 		var c = this.contactSpace[x];
 		if (c == this.currentGrid && gridArray[c].passable == true) {
 			for (var i = 0; i < gridArray[c].bodies.length; i++) {
@@ -432,10 +430,10 @@ Player.prototype.checkContact = function() {
 		}
 		string += this.contactSpace[x] + ": " + gridArray[c].occupants + ", ";
 	}
-	if (this.startGrid == 55) document.getElementById("coord").innerHTML = string;
+	//if (this.startGrid == 55) document.getElementById("coord").innerHTML = string;
 	var x;
 	var y;
-	//this.circle = check;
+	this.circle = check;
 	if (check) {
 		for (var i = 0; i < contactBodies.length; i++) {
 			if(this.checkContactSub(contactBodies[i]) || contactBodies[i].checkContactSub(this)) return true;
@@ -574,4 +572,6 @@ this.canvas.addEventListener('mousemove', this.updateLocation, false);
 addEventListener('keydown', this.processKey, false);
 
 addEventListener('keyup', this.processKeyUp, false);
+/*game.start();
+game.started = true;*/
 game.update();
