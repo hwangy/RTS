@@ -10,7 +10,9 @@ var gridArray = new Array();
 	Where 3 = 65/A
 	Where 4 = 49/1
 */
+var fileName = "map.txt";
 var playerArray = new Array();
+var barriers = new Array();
 
 function Grid(initX,initY,incr, passable) {
 	this.passable = passable
@@ -34,6 +36,17 @@ Grid.prototype.add = function(toAdd) {
 	this.occupants++;
 };
 
+Grid.prototype.makeBarrier = function() {
+	this.passable = false;
+	barriers.push(this);
+};
+
+Grid.prototype.removeBarrier = function() {
+	this.passable = true;
+	barriers.remove(barriers.indexOf(this));
+};
+	
+
 Grid.prototype.remove = function(toRemove) {
 	if (this.bodies.indexOf(toRemove) >= 0) this.bodies.splice(this.bodies.indexOf(toRemove),1);
 	this.occupants--;
@@ -41,30 +54,45 @@ Grid.prototype.remove = function(toRemove) {
 
 /*
 500x500
- * | 0  10 20 30 40 50 60 70 80 90 |
- * | 1  11 21 31 41 51 61 71 81 91 |
- * | 2  12 22 32 42 52 62 72 82 92 |
- * | 3  13 23 33 43 53 63 73 83 93 |
- * | 4  14 24 34 44 54 64 74 84 94 |
- * | 5  15 25 35 45 55 65 75 85 95 |
- * | 6  16 26 36 46 56 66 76 86 96 |
- * | 7  17 27 37 47 57 67 77 87 97 |
- * | 8  18 28 38 48 58 68 78 88 98 | 
- * | 9  19 29 39 49 59 69 79 89 99 |
+ * | 0  1  2  3  4  5  6  7  8  9  |
+ * | 10 11 12 13 14 15 16 17 18 19 |
+ * | 20 21 22 23 24 25 26 27 28 29 |
+ * | 30 31 32 33 34 35 36 37 38 39 |
+ * | 40 41 42 43 44 45 46 47 48 49 |
+ * | 50 51 52 53 54 55 56 57 58 59 |
+ * | 60 61 62 63 64 65 66 67 68 69 |
+ * | 70 71 72 73 74 75 76 77 78 79 |
+ * | 80 81 82 83 84 85 86 87 88 89 |
+ * | 90 91 92 93 94 95 96 97 98 99 |
 Conversion from INDEX X, INDEX Y to Array Index:
-	=> X*10 + Y
+	=> X + Y*10
 Conversion from coordinates to INDEX X, INDEX Y
 	=> (coord.x/50 , coord.y/50)
 So total conversion:
-	=> coord.x/5 + coord.y/50
+	=> coord.x/50 + coord.y/5
 */
+
+var map = [0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,0,0,0,0,0,0,
+	   0,0,1,1,0,0,0,0,0,0,
+	   0,0,1,1,0,0,0,0,0,0,
+	   0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,0,0,0,0,0,0];
+
 function constructGrid() {
-	for (var x = 0; x < canvas.width/game.gridSize; x++) {
-		for (var y = 0; y < canvas.height/game.gridSize; y++) {
-			gridArray.push(new Grid(x*game.gridSize,y*game.gridSize,game.gridSize));
+	for (var y = 0; y < canvas.height/game.gridSize; y++) {
+		for (var x = 0; x < canvas.width/game.gridSize; x++) {
+			gridArray.push(new Grid(x*game.gridSize,y*game.gridSize,game.gridSize, true));
 		}
 	}
-}
+	for (var i = 0; i < gridArray.length; i++) if (map[i]==1) {
+		gridArray[i].makeBarrier();
+	}
+};
 
 game = {
 	windowSize: canvas.width,
@@ -83,18 +111,21 @@ game = {
 	start: function() {
 		started = true;
 		constructGrid();
+		//parseMap();
 		playerArray.push(new Player(canvas.width/2, canvas.height/2));
 		playerArray.push(new Player(canvas.width/4, canvas.height/4));
 	},
 
 	updateDebug: function() {
-		player = playerArray[0];	
-		game.gameText = "<br>" + "Player X: " + player.posX +
-				"<br>" + "Player Y: " + player.posY +
-				"<br>" + "Des    X: " + player.currentDesX +
-				"<br>" + "Des    Y: " + player.currentDesY +
-				"<br>" + "FRAME   : " + game.frame;
-		document.getElementById("debug").innerHTML = "GAME RUNNING"+game.gameText;
+		if (playerArray.length != 0) {
+			var player = playerArray[0];	
+			game.gameText = "<br>" + "Player X: " + player.posX +
+					"<br>" + "Player Y: " + player.posY +
+					"<br>" + "Des    X: " + player.currentDesX +
+					"<br>" + "Des    Y: " + player.currentDesY +
+					"<br>" + "FRAME   : " + game.frame;
+			document.getElementById("debug").innerHTML = "GAME RUNNING"+game.gameText;
+		}
 	},
 
 	square: function(x, y, width, height, color) {
@@ -165,7 +196,7 @@ game = {
 			if (time - game.clickStart > 250 ) game.selectUnits(game.mouseOrigin, game.mouseLocation);
 		}
 		game.updateDebug();
-		document.getElementById("other").innerHTML = "{ " + game.mouseLocation.x +" , " + game.mouseLocation.y + " + { " + game.mouseOrigin.x + ", " + game.mouseOrigin.y + "} -> " + game.drawSelection;	
+		//document.getElementById("other").innerHTML = "{ " + game.mouseLocation.x +" , " + game.mouseLocation.y + " + { " + game.mouseOrigin.x + ", " + game.mouseOrigin.y + "} -> " + game.drawSelection;	
 		game.frame++;
 		setTimeout(game.update, 1000/game.fps);
 	}
@@ -185,7 +216,7 @@ function Player(posX, posY) {
 	this.circle = false;
 	this.mouse = true;
 	this.selected = false;
-	this.currentGrid = parseInt((this.posX+this.size/2)/50,10)*10 + parseInt((this.posY+this.size/2)/50,10);
+	this.currentGrid = parseInt((this.posX+this.size/2)/50,10) + parseInt((this.posY+this.size/2)/50,10)*10;
 	this.startGrid = this.currentGrid;
 	this.newGrid = "";
 	this.contactSpace = new Array(); //[gridArray[this.currentGrid]];
@@ -235,7 +266,7 @@ Player.prototype.update = function() {
 		this.mouse = !this.mouse;
 		keyArray[4]=0;
 	}
-	this.newGrid = parseInt((this.posX+this.size/2)/50,10)*10 + parseInt((this.posY+this.size/2)/50,10);
+	this.newGrid = parseInt((this.posX+this.size/2)/50,10) + parseInt((this.posY+this.size/2)/50,10)*10;
 	if (this.newGrid != this.currentGrid) {
 		gridArray[this.newGrid].add(this);
 		gridArray[this.currentGrid].remove(this);
@@ -248,14 +279,14 @@ Player.prototype.highlightClose = function() {
 	gridArray[this.currentGrid].highlight("#000000");
 	var inX = ((this.posX+this.size/2)%game.gridSize);
 	var inY = ((this.posY+this.size/2)%game.gridSize);
-	var yComp = this.currentGrid%10;
-	var xComp = parseInt(this.currentGrid/10,10);
+	var yComp = parseInt(this.currentGrid/10,10);
+	var xComp = this.currentGrid%10; 
 	/*
 	 * | 7 0 1 |
 	 * | 6 H 2 |
 	 * | 5 4 3 |
 	*/
-	var indexArray = [this.currentGrid-1, (xComp+1)*10+(yComp-1), (xComp+1)*10+yComp, (xComp+1)*10+yComp+1, this.currentGrid+1, (xComp-1)*10+yComp+1, (xComp-1)*10+yComp, (xComp-1)*10+(yComp-1)];
+	var indexArray = [(yComp-1)*10+xComp, (yComp-1)*10+xComp+1, this.currentGrid+1, (yComp+1)*10+xComp+1, (yComp+1)*10+xComp, (yComp+1)*10+xComp-1, this.currentGrid-1, (yComp-1)*10+xComp-1];
 	var i = 0;
 	var j = 0;
 	var k = 0;
@@ -343,9 +374,7 @@ Player.prototype.checkContactSub = function(other){
 }
 
 Array.prototype.remove = function(index) {
-	var newArray = this.slice(0, index);
-	var newArray2 = this.slice(index+1, this.length);
-	return newArray.concat(newArray2);	
+	this.splice(index,1);
 };
 
 /*
@@ -364,6 +393,9 @@ function maintainZoom() {
 		context.moveTo(i, 0);
 		context.lineTo(i, canvas.width);
 		context.stroke();
+	}
+	for (var i = 0; i < barriers.length; i++) {
+		game.square(barriers[i].initX, barriers[i].initY, barriers[i].incr, barriers[i].incr, "#000000");
 	}
 };
 
