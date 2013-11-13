@@ -77,8 +77,8 @@ game = {
 	fps: 60,
 	started: false,
 	frame: 0,
-	clickStart: 0,
-	clickEnd: 0,
+	//clickStart: 0,
+	//clickEnd: 0,
 	
 	start: function() {
 		started = true;
@@ -162,7 +162,7 @@ game = {
 		}
 		if (game.mouseOrigin.x != -100 && game.mouseOrigin.y != -100) {
 			var time = new Date().getTime();
-			if (time - game.clickStart > 250 ) game.selectUnits(game.mouseOrigin, game.mouseLocation);
+			if (time - game.clickStart > 250 || (game.mouseLocation.x-game.mouseOrigin.x)*(game.mouseLocation.y-game.mouseOrigin.y)>500) game.selectUnits(game.mouseOrigin, game.mouseLocation);
 		}
 		game.updateDebug();
 		document.getElementById("other").innerHTML = "{ " + game.mouseLocation.x +" , " + game.mouseLocation.y + " + { " + game.mouseOrigin.x + ", " + game.mouseOrigin.y + "} -> " + game.drawSelection;	
@@ -222,7 +222,7 @@ Player.prototype.update = function() {
 			if(this.checkContact()){
 				this.posX -= this.velX;
 				this.posY -= this.velY;
-			}
+			}else this.corners = [{x:this.posX, y:this.posY},{x:this.posX+this.size,y:this.posY}, {x:this.posX+this.size,y:this.posY+this.size},{x:this.posX, y:this.posY+this.size}];
 		}
 	} else {
 		if (keyArray[0]==1) this.posY--;
@@ -369,7 +369,7 @@ function maintainZoom() {
 
 function processMouse(e) {
 	if (e.button == 0) {
-		//document.getElementById("other").innerHTML = "START";
+		document.getElementById("other").innerHTML = "START";
 		game.clickStart = new Date().getTime();
 		game.drawSelection = true;
 		if (game.mouseOrigin.x == -100 && game.mouseOrigin.y == -100) { 
@@ -385,10 +385,10 @@ function processMouse(e) {
 
 function endProcessMouse(e) {
 	if (e.button == 0) {
-		game.clickEnd = new Date().getTime();
-		if (game.clickEnd - game.clickStart >= 250) for (var x = 0; x < playerArray.length; x++) playerArray[x].selected = false;
+		game.clickEnd = new Date().getTime(); 
+		if (game.clickEnd - game.clickStart >= 250 && !(game.mouseLocation.x-game.mouseOrigin.x)*(game.mouseLocation.y-game.mouseOrigin.y)<=500) for (var x = 0; x < playerArray.length; x++) playerArray[x].selected = false;
 		game.drawSelection = false;
-		if (game.clickEnd - game.clickStart < 250) {
+		if (game.clickEnd - game.clickStart < 250 && (game.mouseLocation.x-game.mouseOrigin.x)*(game.mouseLocation.y-game.mouseOrigin.y)<=500) {
 			for (var x = 0; x < playerArray.length; x++) {
 				if (playerArray[x].selected) {
 					playerArray[x].currentDesX = canvas.relMouseCoord(e).x-playerArray[x].size/2;
