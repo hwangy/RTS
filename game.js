@@ -305,7 +305,7 @@ Player.prototype.update = function() {
 		game.circle(this.posX, this.posY, 2, '#FF0000');
 	//} else game.circle(this.posX, this.posY, this.size/2, '#00FF00');
 	if (this.mouse) {
-		if(this.confused){
+		/*if(this.confused){
 			this.deltaAngle = (Math.random() >= 0.5)?0.12:-0.12;
 			this.angle += this.deltaAngle;
 			this.angleCos = Math.cos(this.angle);
@@ -323,7 +323,7 @@ Player.prototype.update = function() {
 				this.angleCos = Math.cos(this.angle);
 				this.updateCorners();
 			}else this.confused = false;
-		}else{
+		}else{*/
 			var deltaX = this.currentDesX - this.posX;
 			var deltaY = this.currentDesY - this.posY;
 			if(deltaX != 0 || deltaY != 0){//todo: Recalculate direction only when necessary
@@ -345,7 +345,7 @@ Player.prototype.update = function() {
 					this.confused = true;
 				}
 			}
-		}
+		//}
 	} else {
 		if (keyArray[0]==1) this.posY--;
 		if (keyArray[1]==1) this.posY++;
