@@ -23,7 +23,22 @@ function Grid(initX,initY,incr, passable) {
 	this.incr = incr;
 	this.occupants = 0;
 	this.bodies = new Array();
+	//This next part is only relevant for unpassable grids
+	this.corners = [{x:this.initX, y:this.initY+this.incr},{x:this.initX+this.incr,y:this.initY+this.incr}, {x:this.initX+this.incr,y:this.initY},{x:this.initX, y:this.initX}];
 };
+
+Grid.prototype.checkContactSub = function(other){
+	var x;
+	var y;
+	var a;
+	var b;
+	for(var c = 0; c < other.corners.length; c++){
+		x = other.corners[c].x - (this.initX+this.incr/2);
+		y = other.corners[c].y - (this.initY+this.incr/2);
+		if(Math.abs(x) < (this.incr/2) && Math.abs(y) < (this.incr/2)) return true;
+	}
+	return false;
+}
 
 Grid.prototype.highlight = function(color) {
 	context.globalAlpha = 0.2;
@@ -394,18 +409,26 @@ Player.prototype.checkContact = function() {
 	for (var x = 0; x < this.contactSpace.length; x++) {
 
 		var c = this.contactSpace[x];
-		if (c == this.currentGrid) {
+		if (c == this.currentGrid && gridArray[c].passable == true) {
 			for (var i = 0; i < gridArray[c].bodies.length; i++) {
 				if (gridArray[c].bodies[i] != this) {
 					check = true;
 					contactBodies.push(gridArray[c].bodies[i]);
 				}
 			}
-		} else {
+		} else if (c != this.currentGrid && gridArray[c].passable == true){
 			for (var i = 0; i < gridArray[c].bodies.length; i++) {
 				check = true;
 				contactBodies.push(gridArray[c].bodies[i]);
 			}
+		} else if (c != this.currentGrid && gridArray[c].passable == false){
+			check = true;
+			/* 
+				This is bad. But it should work.
+				I'm adding a grid to an array that usually
+				only contains players
+			*/
+			contactBodies.push(gridArray[c]);
 		}
 		string += this.contactSpace[x] + ": " + gridArray[c].occupants + ", ";
 	}
