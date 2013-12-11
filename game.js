@@ -83,7 +83,7 @@ Grid.prototype.remove = function(toRemove) {
  * | 80 81 82 83 84 85 86 87 88 89 |
  * | 90 91 92 93 94 95 96 97 98 99 |
 Conversion from INDEX X, INDEX Y to Array Index:
-	=> X + Y*10
+	=> X + Y*20
 Conversion from coordinates to INDEX X, INDEX Y
 	=> (coord.x/50 , coord.y/50)
 So total conversion:
@@ -112,8 +112,8 @@ var map = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 	   0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
 
 function constructGrid() {
-	for (var y = 0; y < canvas.height/game.gridSize; y++) {
-		for (var x = 0; x < canvas.width/game.gridSize; x++) {
+	for (var y = 0; y < game.mapWidth/game.gridSize; y++) {
+		for (var x = 0; x < game.mapHeight/game.gridSize; x++) {
 			gridArray.push(new Grid(x*game.gridSize,y*game.gridSize,game.gridSize, true));
 		}
 	}
@@ -266,7 +266,7 @@ function Player(posX, posY) {
 	this.circle = false;
 	this.mouse = true;
 	this.selected = false;
-	this.currentGrid = parseInt(this.posX/50,10) + parseInt(this.posY/50,10)*10;
+	this.currentGrid = parseInt(this.posX/50,10) + parseInt(this.posY/50,10)*20;
 //	this.startGrid = this.currentGrid;
 	this.newGrid = "";
 	this.angle = 0;
@@ -331,7 +331,7 @@ Player.prototype.updateCorners = function() {
 };
 
 Player.prototype.update = function() {
-	this.newGrid = parseInt(this.posX/50,10) + parseInt(this.posY/50,10)*10;
+	this.newGrid = parseInt(this.posX/50,10) + parseInt(this.posY/50,10)*20;
 	if (this.newGrid != this.currentGrid) {
 		gridArray[this.newGrid].add(this);
 		gridArray[this.currentGrid].remove(this);
@@ -344,8 +344,8 @@ Player.prototype.update = function() {
 	//} else game.circle(this.posX, this.posY, this.size/2, '#00FF00');
 	if (keyArray[0]==1) game.topLeftY++;
 	if (keyArray[1]==1) game.topLeftY--;
-	if (keyArray[2]==1) game.topLeftX++;
-	if (keyArray[3]==1) game.topLeftX--;
+	if (keyArray[2]==1) game.topLeftX--;
+	if (keyArray[3]==1) game.topLeftX++;
 	if (this.mouse) {
 /*		if(this.confused){
 			this.turn(this.deltaAngle);
@@ -409,17 +409,17 @@ Player.prototype.update = function() {
 };
 
 Player.prototype.highlightClose = function() {
-//	gridArray[this.currentGrid].highlight("#000000");
+	gridArray[this.currentGrid].highlight("#000000");
 	var inX = (this.posX%game.gridSize);
 	var inY = (this.posY%game.gridSize);
-	var yComp = parseInt(this.currentGrid/10,10);
+	var yComp = parseInt(this.currentGrid/20,10);
 	var xComp = this.currentGrid%10;
 	/*
 	 * | 7 0 1 |
 	 * | 6 H 2 |
 	 * | 5 4 3 |
 	*/
-	var indexArray = [(yComp-1)*10+xComp, (yComp-1)*10+xComp+1, this.currentGrid+1, (yComp+1)*10+xComp+1, (yComp+1)*10+xComp, (yComp+1)*10+xComp-1, this.currentGrid-1, (yComp-1)*10+xComp-1];
+	var indexArray = [(yComp-1)*20+xComp, (yComp-1)*20+xComp+1, this.currentGrid+1, (yComp+1)*20+xComp+1, (yComp+1)*20+xComp, (yComp+1)*20+xComp-1, this.currentGrid-1, (yComp-1)*20+xComp-1];
 	var i = 0;
 	var j = 0;
 	var k = 0;
@@ -428,30 +428,30 @@ Player.prototype.highlightClose = function() {
 		i = 2;
 		j = 3;
 		k = 4;
-//		if (indexArray[i] > -1 && indexArray[i] < 100) gridArray[indexArray[i]].highlight("#ff0000");
-//		if (indexArray[j] > -1 && indexArray[j] < 100) gridArray[indexArray[j]].highlight("#ff0000");
-//		if (indexArray[k] > -1 && indexArray[k] < 100) gridArray[indexArray[k]].highlight("#ff0000");
+		if (indexArray[i] > -1 && indexArray[i] < 400) gridArray[indexArray[i]].highlight("#ff0000");
+		if (indexArray[j] > -1 && indexArray[j] < 400) gridArray[indexArray[j]].highlight("#ff0000");
+		if (indexArray[k] > -1 && indexArray[k] < 400) gridArray[indexArray[k]].highlight("#ff0000");
 	} else if (inX >= 25 && inY < 25) {
 		i = 0;
 		j = 1;
 		k = 2;
-//		if (indexArray[i] > -1 && indexArray[i] < 100) gridArray[indexArray[i]].highlight("#ff0000");
-//		if (indexArray[j] > -1 && indexArray[j] < 100) gridArray[indexArray[j]].highlight("#ff0000");
-//		if (indexArray[k] > -1 && indexArray[k] < 100) gridArray[indexArray[k]].highlight("#ff0000");
+		if (indexArray[i] > -1 && indexArray[i] < 400) gridArray[indexArray[i]].highlight("#ff0000");
+		if (indexArray[j] > -1 && indexArray[j] < 400) gridArray[indexArray[j]].highlight("#ff0000");
+		if (indexArray[k] > -1 && indexArray[k] < 400) gridArray[indexArray[k]].highlight("#ff0000");
 	} else if (inX < 25 && inY >= 25) {
 		i = 6;
 		j = 5;
 		k = 4;
-//		if (indexArray[i] > -1 && indexArray[i] < 100) gridArray[indexArray[i]].highlight("#ff0000");
-//		if (indexArray[j] > -1 && indexArray[j] < 100) gridArray[indexArray[j]].highlight("#ff0000");
-//		if (indexArray[k] > -1 && indexArray[k] < 100) gridArray[indexArray[k]].highlight("#ff0000");
+		if (indexArray[i] > -1 && indexArray[i] < 400) gridArray[indexArray[i]].highlight("#ff0000");
+		if (indexArray[j] > -1 && indexArray[j] < 400) gridArray[indexArray[j]].highlight("#ff0000");
+		if (indexArray[k] > -1 && indexArray[k] < 400) gridArray[indexArray[k]].highlight("#ff0000");
 	} else if (inX < 25 && inY < 25) {
 		i = 0;
 		j = 7;
 		k = 6;
-//		if (indexArray[i] > -1 && indexArray[i] < 100) gridArray[indexArray[i]].highlight("#ff0000");
-//		if (indexArray[j] > -1 && indexArray[j] < 100) gridArray[indexArray[j]].highlight("#ff0000");
-//		if (indexArray[k] > -1 && indexArray[k] < 100) gridArray[indexArray[k]].highlight("#ff0000");
+		if (indexArray[i] > -1 && indexArray[i] < 400) gridArray[indexArray[i]].highlight("#ff0000");
+		if (indexArray[j] > -1 && indexArray[j] < 400) gridArray[indexArray[j]].highlight("#ff0000");
+		if (indexArray[k] > -1 && indexArray[k] < 400) gridArray[indexArray[k]].highlight("#ff0000");
 	}
 	while (this.contactSpace.length > 0) this.contactSpace.pop();
 	this.contactSpace.push(this.newGrid);
