@@ -123,12 +123,21 @@ game = {
 	//clickStart: 0,
 	//clickEnd: 0,
 	
+	addPlayer: function() {
+		var p = new Player(Math.random()*canvas.width, Math.random()*canvas.height);
+		p.update();
+		while(p.checkContact() || !gridArray[p.currentGrid].passable){
+			gridArray[p.currentGrid].remove(p);
+			p = new Player(Math.random()*canvas.width, Math.random()*canvas.height);
+			p.update();
+		}
+		playerArray.push(p);
+	},
+	
 	start: function() {
 		constructGrid();
 		started = true;
 		//parseMap();
-		playerArray.push(new Player(canvas.width/2, canvas.height/2));
-		playerArray.push(new Player(canvas.width/4, canvas.height/4));
 	},
 
 	updateDebug: function() {
@@ -223,21 +232,24 @@ function Player(posX, posY) {
 	this.currentDesY = posY;
 	this.posX = this.currentDesX;
 	this.posY = this.currentDesY;
-	this.size = 6;
+	this.tempDesX = posX;
+	this.tempDesY = posY;
+	this.size = 2+Math.random()*8;
 	this.corners = [{x:this.posX-this.size, y:this.posY+this.size},{x:this.posX+this.size,y:this.posY+this.size}, {x:this.posX+this.size,y:this.posY-this.size},{x:this.posX-this.size, y:this.posY-this.size}];
-	this.vel = 2;
+	this.vel = 12/this.size;
 	this.velX = 0;
 	this.velY = 0;
 	this.circle = false;
 	this.mouse = true;
 	this.selected = false;
 	this.currentGrid = parseInt(this.posX/50,10) + parseInt(this.posY/50,10)*10;
-	this.startGrid = this.currentGrid;
+//	this.startGrid = this.currentGrid;
 	this.newGrid = "";
 	this.angle = 0;
 	this.angleSin = 0;
 	this.angleCos = 1;
 	this.deltaAngle = 0;//Hehehe bad coding.
+//	this.reverse = false;
 	this.contactSpace = new Array(); //[gridArray[this.currentGrid]];
 	gridArray[this.currentGrid].add(this);
 	game.square(this.posX, this.posY, this.size, this.size, "#00FF00");
@@ -261,24 +273,30 @@ Player.prototype.render = function() {
 	}
 };
 
+Player.prototype.turn = function(angle){
+	this.angle += angle;
+	while(this.angle > Math.PI*2) this.angle -= Math.PI*2;
+	while(this.angle < -Math.PI*2) this.angle += Math.PI*2;
+	this.angleCos = Math.cos(this.angle);
+	this.angleSin = Math.sin(this.angle);
+}
+
 Player.prototype.turnTowardsDest = function(destAngle) {
 	destAngle -= this.angle;
 	while(destAngle > Math.PI) destAngle -= Math.PI*2;
 	while(destAngle < -Math.PI) destAngle += Math.PI*2;
 	if(Math.abs(destAngle) < 0.12){
-		this.angle += destAngle;
+		this.turn(destAngle);
 		this.deltaAngle = destAngle;
 	}else{
 		if(destAngle > 0){
-			this.angle += 0.12;
+			this.turn(0.12);
 			this.deltaAngle = 0.12;
 		}else{
-			this.angle -= 0.12;
+			this.turn(-0.12);
 			this.deltaAngle = -0.12;
 		}
 	}
-	this.angleSin = Math.sin(this.angle);
-	this.angleCos = Math.cos(this.angle);
 	return Math.abs(destAngle)<Math.PI/2;
 };
 
@@ -301,12 +319,9 @@ Player.prototype.update = function() {
 		game.circle(this.posX, this.posY, 2, '#FF0000');
 	//} else game.circle(this.posX, this.posY, this.size/2, '#00FF00');
 	if (this.mouse) {
-		var deltaX = this.currentDesX - this.posX;
-		var deltaY = this.currentDesY - this.posY;
-		if(deltaX != 0 || deltaY != 0){//todo: Recalculate direction only when necessary
-			var dist = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
-			var vel = dist > this.vel ? this.vel : dist;
-			if(!this.turnTowardsDest(Math.atan2(deltaY, deltaX))) vel = -vel;
+/*		if(this.confused){
+			this.turn(this.deltaAngle);
+			var vel = this.reverse?-this.vel/2:this.vel/2;
 			this.velX = this.angleCos*vel;
 			this.velY = this.angleSin*vel;
 			this.posX += this.velX;
@@ -315,12 +330,43 @@ Player.prototype.update = function() {
 			if(this.checkContact()){
 				this.posX -= this.velX;
 				this.posY -= this.velY;
-				this.angle -= this.deltaAngle;
-				this.angleSin = Math.sin(this.angle);
-				this.angleCos = Math.cos(this.angle);
+				this.turn(-this.deltaAngle);
 				this.updateCorners();
+				this.deltaAngle = 0;
 			}
-		}
+			this.confused--;
+		}else{*/
+			var deltaX = this.tempDesX - this.posX;
+			var deltaY = this.tempDesY - this.posY;
+			if(Math.abs(deltaX)>this.size || Math.abs(deltaY)>this.size){//todo: Recalculate direction only when necessary
+				var dist = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
+				var vel = dist > this.vel ? this.vel : dist*dist/this.vel;
+				if(!this.turnTowardsDest(Math.atan2(deltaY, deltaX))) vel = -vel;
+				this.velX = this.angleCos*vel;
+				this.velY = this.angleSin*vel;
+				this.posX += this.velX;
+				this.posY += this.velY;
+				this.updateCorners();
+				if(this.checkContact()){
+					this.posX -= this.velX;
+					this.posY -= this.velY;
+					this.turn(-this.deltaAngle);
+					//this.deltaAngle = this.deltaAngle>0 ? -0.12 : 0.12;
+					this.updateCorners();
+					//this.reverse = vel>0;
+					if(this.tempDesX != this.currentDesX || this.tempDesY != this.currentDesY){
+						this.tempDesX = this.currentDesX;
+						this.tempDesY = this.currentDesY;
+					}else{
+						this.tempDesX = this.posX + Math.random()*6*this.size-3*this.size;
+						this.tempDesY = this.posY + Math.random()*6*this.size-3*this.size;
+					}
+				}
+			}else if(this.tempDesX != this.currentDesX || this.tempDesY != this.currentDesY){
+				this.tempDesY = this.currentDesY;
+				this.tempDesX = this.currentDesX;
+			}
+		//}
 	} else {
 		if (keyArray[0]==1) this.posY--;
 		if (keyArray[1]==1) this.posY++;
@@ -335,7 +381,7 @@ Player.prototype.update = function() {
 };
 
 Player.prototype.highlightClose = function() {
-	gridArray[this.currentGrid].highlight("#000000");
+//	gridArray[this.currentGrid].highlight("#000000");
 	var inX = (this.posX%game.gridSize);
 	var inY = (this.posY%game.gridSize);
 	var yComp = parseInt(this.currentGrid/10,10);
@@ -354,36 +400,39 @@ Player.prototype.highlightClose = function() {
 		i = 2;
 		j = 3;
 		k = 4;
-		if (indexArray[i] > -1 && indexArray[i] < 100) gridArray[indexArray[i]].highlight("#ff0000");
-		if (indexArray[j] > -1 && indexArray[j] < 100) gridArray[indexArray[j]].highlight("#ff0000");
-		if (indexArray[k] > -1 && indexArray[k] < 100) gridArray[indexArray[k]].highlight("#ff0000");
+//		if (indexArray[i] > -1 && indexArray[i] < 100) gridArray[indexArray[i]].highlight("#ff0000");
+//		if (indexArray[j] > -1 && indexArray[j] < 100) gridArray[indexArray[j]].highlight("#ff0000");
+//		if (indexArray[k] > -1 && indexArray[k] < 100) gridArray[indexArray[k]].highlight("#ff0000");
 	} else if (inX >= 25 && inY < 25) {
 		i = 0;
 		j = 1;
 		k = 2;
-		if (indexArray[i] > -1 && indexArray[i] < 100) gridArray[indexArray[i]].highlight("#ff0000");
-		if (indexArray[j] > -1 && indexArray[j] < 100) gridArray[indexArray[j]].highlight("#ff0000");
-		if (indexArray[k] > -1 && indexArray[k] < 100) gridArray[indexArray[k]].highlight("#ff0000");
+//		if (indexArray[i] > -1 && indexArray[i] < 100) gridArray[indexArray[i]].highlight("#ff0000");
+//		if (indexArray[j] > -1 && indexArray[j] < 100) gridArray[indexArray[j]].highlight("#ff0000");
+//		if (indexArray[k] > -1 && indexArray[k] < 100) gridArray[indexArray[k]].highlight("#ff0000");
 	} else if (inX < 25 && inY >= 25) {
 		i = 6;
 		j = 5;
 		k = 4;
-		if (indexArray[i] > -1 && indexArray[i] < 100) gridArray[indexArray[i]].highlight("#ff0000");
-		if (indexArray[j] > -1 && indexArray[j] < 100) gridArray[indexArray[j]].highlight("#ff0000");
-		if (indexArray[k] > -1 && indexArray[k] < 100) gridArray[indexArray[k]].highlight("#ff0000");
+//		if (indexArray[i] > -1 && indexArray[i] < 100) gridArray[indexArray[i]].highlight("#ff0000");
+//		if (indexArray[j] > -1 && indexArray[j] < 100) gridArray[indexArray[j]].highlight("#ff0000");
+//		if (indexArray[k] > -1 && indexArray[k] < 100) gridArray[indexArray[k]].highlight("#ff0000");
 	} else if (inX < 25 && inY < 25) {
 		i = 0;
 		j = 7;
 		k = 6;
-		if (indexArray[i] > -1 && indexArray[i] < 100) gridArray[indexArray[i]].highlight("#ff0000");
-		if (indexArray[j] > -1 && indexArray[j] < 100) gridArray[indexArray[j]].highlight("#ff0000");
-		if (indexArray[k] > -1 && indexArray[k] < 100) gridArray[indexArray[k]].highlight("#ff0000");
+//		if (indexArray[i] > -1 && indexArray[i] < 100) gridArray[indexArray[i]].highlight("#ff0000");
+//		if (indexArray[j] > -1 && indexArray[j] < 100) gridArray[indexArray[j]].highlight("#ff0000");
+//		if (indexArray[k] > -1 && indexArray[k] < 100) gridArray[indexArray[k]].highlight("#ff0000");
 	}
 	while (this.contactSpace.length > 0) this.contactSpace.pop();
 	this.contactSpace.push(this.newGrid);
-	this.contactSpace.push(indexArray[i]);
-	this.contactSpace.push(indexArray[j]);
-	this.contactSpace.push(indexArray[k]);
+	if(gridArray[indexArray[i]])
+		this.contactSpace.push(indexArray[i]);
+	if(gridArray[indexArray[j]])
+		this.contactSpace.push(indexArray[j]);
+	if(gridArray[indexArray[k]])
+		this.contactSpace.push(indexArray[k]);
 };
 
 Player.prototype.checkContact = function() {
@@ -518,6 +567,8 @@ function processKey(e) {
 		game.started = true;
 		game.update();
 	}
+
+	if(e.keyCode == 32 && game.started) game.addPlayer();
 
 	if (e.keyCode == 87) keyArray[0]=1;
 	else if (e.keyCode == 83) keyArray[1]=1;
