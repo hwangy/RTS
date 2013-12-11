@@ -415,7 +415,7 @@ Player.prototype.highlightClose = function() {
 	var inX = (this.posX%game.gridSize);
 	var inY = (this.posY%game.gridSize);
 	var yComp = parseInt(this.currentGrid/20,10);
-	var xComp = this.currentGrid%20;
+	var xComp = this.currentGrid ;
 	/*
 	 * | 7 0 1 |
 	 * | 6 H 2 |
