@@ -44,7 +44,7 @@ Grid.prototype.checkContactSub = function(other){
 
 Grid.prototype.highlight = function(color) {
 	context.globalAlpha = 0.2;
-	game.square(this.initX, this.initY, this.incr, this.incr, color);
+	game.square(this.initX-game.topLeftX, this.initY-game.topLeftY, this.incr, this.incr, color);
 	//game.square(this.adjustedX, this.adjustedY, this.incr, this.incr, color);
 	context.globalAlpha = 1;
 };
@@ -137,6 +137,8 @@ game = {
 	topLeftY: 0,
 	mapWidth: 1000,
 	mapHeight: 1000,
+	gameWidth: 500,
+	gameHeight: 500,
 	//clickStart: 0,
 	//clickEnd: 0,
 	
@@ -210,10 +212,10 @@ game = {
 			y2 = eCoord.y;
 			y1 = sCoord.y;
 		}
-		x1 = x1 - game.topLeftX;
-		x2 = x2 - game.topLeftX;
-		y1 = y1 - game.topLeftY;
-		y2 = y2 - game.topLeftY;
+		x1 = x1 + game.topLeftX;
+		x2 = x2 + game.topLeftX;
+		y1 = y1 + game.topLeftY;
+		y2 = y2 + game.topLeftY;
 		for (var i = 0; i < playerArray.length; i++) {
 			if ((playerArray[i].posX >= x1 && playerArray[i].posX + playerArray[i].size < x2) && (playerArray[i].posY >= y1 && playerArray[i].posY + playerArray[i].size < y2)) {
 				playerArray[i].selected = true;
@@ -282,16 +284,16 @@ function Player(posX, posY) {
 Player.prototype.render = function() {
 	context.beginPath();
 	context.fillStyle = '#00FF00';
-	context.moveTo(this.corners[0].x+game.topLeftX, this.corners[0].y+game.topLeftY);
-	for(var c = 1; c < this.corners.length; c++) context.lineTo(this.corners[c].x+game.topLeftX, this.corners[c].y+game.topLeftY);
+	context.moveTo(this.corners[0].x-game.topLeftX, this.corners[0].y-game.topLeftY);
+	for(var c = 1; c < this.corners.length; c++) context.lineTo(this.corners[c].x-game.topLeftX, this.corners[c].y-game.topLeftY);
 	context.closePath();
 	context.fill();
 	if (this.selected) {
 		context.beginPath();
 		context.lineWidth = 2;
 		context.strokeStyle = '#000000';
-		context.moveTo(this.corners[0].x+game.topLeftX, this.corners[0].y+game.topLeftY);
-		for(var c = 1; c < this.corners.length; c++) context.lineTo(this.corners[c].x+game.topLeftX, this.corners[c].y+game.topLeftY);
+		context.moveTo(this.corners[0].x-game.topLeftX, this.corners[0].y-game.topLeftY);
+		for(var c = 1; c < this.corners.length; c++) context.lineTo(this.corners[c].x-game.topLeftX, this.corners[c].y-game.topLeftY);
 		context.closePath();
 		context.stroke();
 	}
@@ -340,12 +342,12 @@ Player.prototype.update = function() {
 	this.highlightClose();	
 	//if (!this.circle) {
 		this.render();
-		game.circle(this.posX+game.topLeftX, this.posY+game.topLeftY, 2, '#FF0000');
+		game.circle(this.posX-game.topLeftX, this.posY-game.topLeftY, 2, '#FF0000');
 	//} else game.circle(this.posX, this.posY, this.size/2, '#00FF00');
-	if (keyArray[0]==1) game.topLeftY++;
-	if (keyArray[1]==1) game.topLeftY--;
-	if (keyArray[2]==1) game.topLeftX--;
-	if (keyArray[3]==1) game.topLeftX++;
+	if (keyArray[1]==1 && (game.topLeftY + game.gameHeight) < game.mapHeight) game.topLeftY++;
+	if (keyArray[0]==1 && game.topLeftY > 0) game.topLeftY--;
+	if (keyArray[3]==1 && game.topLeftX > 0) game.topLeftX--;
+	if (keyArray[2]==1 && (game.topLeftX + game.gameWidth) < game.mapWidth) game.topLeftX++;
 	if (this.mouse) {
 /*		if(this.confused){
 			this.turn(this.deltaAngle);
@@ -413,7 +415,7 @@ Player.prototype.highlightClose = function() {
 	var inX = (this.posX%game.gridSize);
 	var inY = (this.posY%game.gridSize);
 	var yComp = parseInt(this.currentGrid/20,10);
-	var xComp = this.currentGrid%10;
+	var xComp = this.currentGrid%20;
 	/*
 	 * | 7 0 1 |
 	 * | 6 H 2 |
@@ -533,18 +535,18 @@ function maintainZoom() {
 	var modifiedStartX = game.topLeftX - game.gridSize*Math.floor(game.topLeftX/game.gridSize);
 	var modifiedStartY = game.topLeftY - game.gridSize*Math.floor(game.topLeftY/game.gridSize);
 	//alert(modifiedStartX);
-	for (var i = 0; i < canvas.width; i += game.gridSize*game.zoomLevel) {
+	for (var i = 0; i < canvas.width+game.gridSize; i += game.gridSize*game.zoomLevel) {
 		context.beginPath();
-		context.moveTo(0,i+modifiedStartY);
-		context.lineTo(canvas.width, i+modifiedStartY);
+		context.moveTo(0,i-modifiedStartY);
+		context.lineTo(canvas.width, i-modifiedStartY);
 		context.stroke();
 		context.beginPath();
-		context.moveTo(i+modifiedStartX,0);
-		context.lineTo(i+modifiedStartX, canvas.width);
+		context.moveTo(i-modifiedStartX,0);
+		context.lineTo(i-modifiedStartX, canvas.width);
 		context.stroke();
 	}
 	for (var i = 0; i < barriers.length; i++) {
-		game.square(barriers[i].initX+game.topLeftX, barriers[i].initY+game.topLeftY, barriers[i].incr, barriers[i].incr, "#000000");
+		game.square(barriers[i].initX-game.topLeftX, barriers[i].initY-game.topLeftY, barriers[i].incr, barriers[i].incr, "#000000");
 	}
 };
 
@@ -573,10 +575,10 @@ function endProcessMouse(e) {
 			for (var x = 0; x < playerArray.length; x++) {
 				if (playerArray[x].selected) {
 					//document.getElementById("coord").innerHTML = canvas.relMouseCoord(e).x;
-					playerArray[x].currentDesX = canvas.relMouseCoord(e).x-game.topLeftX;
-					playerArray[x].currentDesY = canvas.relMouseCoord(e).y-game.topLeftY;
-					playerArray[x].tempDesX = canvas.relMouseCoord(e).x-game.topLeftX;
-					playerArray[x].tempDesY = canvas.relMouseCoord(e).y-game.topLeftY;
+					playerArray[x].currentDesX = canvas.relMouseCoord(e).x+game.topLeftX;
+					playerArray[x].currentDesY = canvas.relMouseCoord(e).y+game.topLeftY;
+					playerArray[x].tempDesX = canvas.relMouseCoord(e).x+game.topLeftX;
+					playerArray[x].tempDesY = canvas.relMouseCoord(e).y+game.topLeftY;
 				}
 			}
 		} else {
