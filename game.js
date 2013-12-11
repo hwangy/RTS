@@ -20,6 +20,8 @@ function Grid(initX,initY,incr, passable) {
 	this.initY = initY;
 	this.finalX = initX + incr;
 	this.finalY = initY + incr;
+	//this.adjustedX = this.initX;
+	//this.adjustedY = this.initY;
 	this.incr = incr;
 	this.occupants = 0;
 	this.bodies = new Array();
@@ -43,6 +45,7 @@ Grid.prototype.checkContactSub = function(other){
 Grid.prototype.highlight = function(color) {
 	context.globalAlpha = 0.2;
 	game.square(this.initX, this.initY, this.incr, this.incr, color);
+	//game.square(this.adjustedX, this.adjustedY, this.incr, this.incr, color);
 	context.globalAlpha = 1;
 };
 
@@ -87,16 +90,26 @@ So total conversion:
 	=> coord.x/50 + coord.y/5
 */
 
-var map = [0,0,0,0,0,0,0,0,0,0,
-	   1,1,0,0,0,0,0,0,0,1,
-	   1,0,0,1,1,0,1,1,0,1,
-	   1,1,0,1,1,0,1,0,0,1,
-	   0,0,0,0,0,0,0,0,0,0,
-	   0,0,0,0,0,0,0,0,0,0,
-	   0,1,1,0,1,1,0,1,0,1,
-	   1,1,0,0,1,1,1,1,1,1,
-	   1,0,1,0,0,1,0,0,0,1,
-	   0,1,1,0,1,1,0,1,1,1];
+var map = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	   0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
 
 function constructGrid() {
 	for (var y = 0; y < canvas.height/game.gridSize; y++) {
@@ -120,6 +133,10 @@ game = {
 	fps: 60,
 	started: false,
 	frame: 0,
+	topLeftX: 0,
+	topLeftY: 0,
+	mapWidth: 1000,
+	mapHeight: 1000,
 	//clickStart: 0,
 	//clickEnd: 0,
 	
@@ -193,6 +210,10 @@ game = {
 			y2 = eCoord.y;
 			y1 = sCoord.y;
 		}
+		x1 = x1 - game.topLeftX;
+		x2 = x2 - game.topLeftX;
+		y1 = y1 - game.topLeftY;
+		y2 = y2 - game.topLeftY;
 		for (var i = 0; i < playerArray.length; i++) {
 			if ((playerArray[i].posX >= x1 && playerArray[i].posX + playerArray[i].size < x2) && (playerArray[i].posY >= y1 && playerArray[i].posY + playerArray[i].size < y2)) {
 				playerArray[i].selected = true;
@@ -220,7 +241,8 @@ game = {
 			if (time - game.clickStart > 250 || (game.mouseLocation.x-game.mouseOrigin.x)*(game.mouseLocation.y-game.mouseOrigin.y)>500) game.selectUnits(game.mouseOrigin, game.mouseLocation);
 		}
 		game.updateDebug();
-		//document.getElementById("other").innerHTML = "{ " + game.mouseLocation.x +" , " + game.mouseLocation.y + " + { " + game.mouseOrigin.x + ", " + game.mouseOrigin.y + "} -> " + game.drawSelection;	
+		document.getElementById("coord").innerHTML =  "{ " + game.topLeftX +" , " + game.topLeftY + "} ";
+		//document.getElementById("other").innerHTML = "{ " + game.mouseLocation.x +" , " + game.mouseLocation.y + " + { " + game.mouseOrigin.x + ", " + game.mouseOrigin.y + "} -> " + game.drawSelection;
 		game.frame++;
 		setTimeout(game.update, 1000/game.fps);
 	}
@@ -232,6 +254,8 @@ function Player(posX, posY) {
 	this.currentDesY = posY;
 	this.posX = this.currentDesX;
 	this.posY = this.currentDesY;
+	//this.adjustedX = this.posX;
+	//this.adjustedY = this.posY;
 	this.tempDesX = posX;
 	this.tempDesY = posY;
 	this.size = 2+Math.random()*8;
@@ -258,16 +282,16 @@ function Player(posX, posY) {
 Player.prototype.render = function() {
 	context.beginPath();
 	context.fillStyle = '#00FF00';
-	context.moveTo(this.corners[0].x, this.corners[0].y);
-	for(var c = 1; c < this.corners.length; c++) context.lineTo(this.corners[c].x, this.corners[c].y);
+	context.moveTo(this.corners[0].x+game.topLeftX, this.corners[0].y+game.topLeftY);
+	for(var c = 1; c < this.corners.length; c++) context.lineTo(this.corners[c].x+game.topLeftX, this.corners[c].y+game.topLeftY);
 	context.closePath();
 	context.fill();
 	if (this.selected) {
 		context.beginPath();
 		context.lineWidth = 2;
 		context.strokeStyle = '#000000';
-		context.moveTo(this.corners[0].x, this.corners[0].y);
-		for(var c = 1; c < this.corners.length; c++) context.lineTo(this.corners[c].x, this.corners[c].y);
+		context.moveTo(this.corners[0].x+game.topLeftX, this.corners[0].y+game.topLeftY);
+		for(var c = 1; c < this.corners.length; c++) context.lineTo(this.corners[c].x+game.topLeftX, this.corners[c].y+game.topLeftY);
 		context.closePath();
 		context.stroke();
 	}
@@ -316,8 +340,12 @@ Player.prototype.update = function() {
 	this.highlightClose();	
 	//if (!this.circle) {
 		this.render();
-		game.circle(this.posX, this.posY, 2, '#FF0000');
+		game.circle(this.posX+game.topLeftX, this.posY+game.topLeftY, 2, '#FF0000');
 	//} else game.circle(this.posX, this.posY, this.size/2, '#00FF00');
+	if (keyArray[0]==1) game.topLeftY++;
+	if (keyArray[1]==1) game.topLeftY--;
+	if (keyArray[2]==1) game.topLeftX++;
+	if (keyArray[3]==1) game.topLeftX--;
 	if (this.mouse) {
 /*		if(this.confused){
 			this.turn(this.deltaAngle);
@@ -368,10 +396,10 @@ Player.prototype.update = function() {
 			}
 		//}
 	} else {
-		if (keyArray[0]==1) this.posY--;
+		/*if (keyArray[0]==1) this.posY--;
 		if (keyArray[1]==1) this.posY++;
 		if (keyArray[2]==1) this.posX++;
-		if (keyArray[3]==1) this.posX--;
+		if (keyArray[3]==1) this.posX--;*/
 	}
 	
 	if (keyArray[4]==1) {
@@ -502,18 +530,21 @@ Array.prototype.remove = function(index) {
  */
 function maintainZoom() {
 	var newWinSize = game.windowSize * game.zoomLevel;
-	for (var i = 0; i < canvas.width; i += game.gridSize) {
+	var modifiedStartX = game.topLeftX - game.gridSize*Math.floor(game.topLeftX/game.gridSize);
+	var modifiedStartY = game.topLeftY - game.gridSize*Math.floor(game.topLeftY/game.gridSize);
+	//alert(modifiedStartX);
+	for (var i = 0; i < canvas.width; i += game.gridSize*game.zoomLevel) {
 		context.beginPath();
-		context.moveTo(0,i);
-		context.lineTo(canvas.width, i);
+		context.moveTo(0,i+modifiedStartY);
+		context.lineTo(canvas.width, i+modifiedStartY);
 		context.stroke();
 		context.beginPath();
-		context.moveTo(i, 0);
-		context.lineTo(i, canvas.width);
+		context.moveTo(i+modifiedStartX,0);
+		context.lineTo(i+modifiedStartX, canvas.width);
 		context.stroke();
 	}
 	for (var i = 0; i < barriers.length; i++) {
-		game.square(barriers[i].initX, barriers[i].initY, barriers[i].incr, barriers[i].incr, "#000000");
+		game.square(barriers[i].initX+game.topLeftX, barriers[i].initY+game.topLeftY, barriers[i].incr, barriers[i].incr, "#000000");
 	}
 };
 
@@ -541,8 +572,11 @@ function endProcessMouse(e) {
 		if (game.clickEnd - game.clickStart < 250 && (game.mouseLocation.x-game.mouseOrigin.x)*(game.mouseLocation.y-game.mouseOrigin.y)<=500) {
 			for (var x = 0; x < playerArray.length; x++) {
 				if (playerArray[x].selected) {
-					playerArray[x].currentDesX = canvas.relMouseCoord(e).x;
-					playerArray[x].currentDesY = canvas.relMouseCoord(e).y;
+					//document.getElementById("coord").innerHTML = canvas.relMouseCoord(e).x;
+					playerArray[x].currentDesX = canvas.relMouseCoord(e).x-game.topLeftX;
+					playerArray[x].currentDesY = canvas.relMouseCoord(e).y-game.topLeftY;
+					playerArray[x].tempDesX = canvas.relMouseCoord(e).x-game.topLeftX;
+					playerArray[x].tempDesY = canvas.relMouseCoord(e).y-game.topLeftY;
 				}
 			}
 		} else {
@@ -570,11 +604,11 @@ function processKey(e) {
 
 	if(e.keyCode == 32 && game.started) game.addPlayer();
 
-	if (e.keyCode == 87) keyArray[0]=1;
-	else if (e.keyCode == 83) keyArray[1]=1;
-	else if (e.keyCode == 68) keyArray[2]=1;
-	else if (e.keyCode == 65) keyArray[3]=1;
-	else if (e.keyCode == 49) keyArray[4]=1;
+	if (e.keyCode == 87) keyArray[0]=1;		//W
+	else if (e.keyCode == 83) keyArray[1]=1;	//S
+	else if (e.keyCode == 68) keyArray[2]=1;	//D
+	else if (e.keyCode == 65) keyArray[3]=1;	//A
+	else if (e.keyCode == 49) keyArray[4]=1;	//1
 };
 function processKeyUp(e) {
 	if (e.keyCode == 87) keyArray[0]=0;
