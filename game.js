@@ -137,6 +137,7 @@ game = {
 	mapHeight: 1000,
 	gameWidth: 500,
 	gameHeight: 500,
+	zoomReference: {x:250, y:250},
 	//clickStart: 0,
 	//clickEnd: 0,
 	
@@ -225,15 +226,30 @@ game = {
 
 	update: function() {
 		game.clear();
+		var unitChangeX = 0;
+		var unitChangeY = 0;
+		if (keyArray[5]==1 || keyArray[6]==1) {
+			unitChangeX = (game.zoomReference.x*0.01)/(game.zoomLevel*(game.zoomLevel+0.01));
+			unitChangeY = (game.zoomReference.y*0.01)/(game.zoomLevel*(game.zoomLevel+0.01));
+		}
 		
 		if (keyArray[1]==1 && (game.topLeftY + game.gameHeight) < game.mapHeight) game.topLeftY+=2;
 	    if (keyArray[0]==1 && game.topLeftY > 0) game.topLeftY-=2;
 	    if (keyArray[3]==1 && game.topLeftX > 0) game.topLeftX-=2;
 	    if (keyArray[2]==1 && (game.topLeftX + game.gameWidth) < game.mapWidth) game.topLeftX+=2;
-	    if (keyArray[5]==1 && game.zoomLevel < 10) game.zoomLevel += 0.01;
-	    if (keyArray[6]==1 && game.zoomLevel > 0) game.zoomLevel -= 0.01;
+	    if (keyArray[5]==1 && game.zoomLevel < 10) {
+			//Zoom in
+			game.zoomLevel += 0.01;
+			game.topLeftX += unitChangeX;
+			game.topLeftY += unitChangeY;
+		} else if (keyArray[6]==1 && game.zoomLevel > 0) {
+			//Zoom out
+			game.zoomLevel -= 0.01;
+			game.topLeftX -= unitChangeX;
+			game.topLeftY -= unitChangeY;
+		}
 	    
-		maintainZoom();
+		maintainZoom(unitChangeX, unitChangeY);
 		if (game.drawSelection) {
 			context.globalAlpha = 0.1;
 			var deltaX = game.mouseLocation.x - game.mouseOrigin.x;
@@ -249,7 +265,7 @@ game = {
 			if (time - game.clickStart > 250 || (game.mouseLocation.x-game.mouseOrigin.x)*(game.mouseLocation.y-game.mouseOrigin.y)>500) game.selectUnits(game.mouseOrigin, game.mouseLocation);
 		}
 		game.updateDebug();
-		document.getElementById("coord").innerHTML =  "{ " + game.topLeftX +" , " + game.topLeftY + "} ";
+		document.getElementById("coord").innerHTML =  "{ " + game.topLeftX +" , " + game.topLeftY + "}: " + game.zoomLevel;
 		//document.getElementById("other").innerHTML = "{ " + game.mouseLocation.x +" , " + game.mouseLocation.y + " + { " + game.mouseOrigin.x + ", " + game.mouseOrigin.y + "} -> " + game.drawSelection;
 		game.frame++;
 		setTimeout(game.update, 1000/game.fps);
@@ -533,20 +549,34 @@ Array.prototype.remove = function(index) {
  * it just ended up being for creating the grids for 
  * contact listening. Huh. Should probably do zoom too eventually.
  */
-function maintainZoom() {
+function maintainZoom(changeX, changeY) {
+	game.circle(250, 250, 2, '#FF0000');
+	
 	var newWinSize = game.windowSize * game.zoomLevel;
 	var modifiedStartX = game.topLeftX - game.gridSize*Math.floor(game.topLeftX/game.gridSize);
 	var modifiedStartY = game.topLeftY - game.gridSize*Math.floor(game.topLeftY/game.gridSize);
+	//if (changeY != 0) document.getElementById("moredebug").innerHTML = "";
 	//alert(modifiedStartX);
 	for (var i = 0; i < canvas.width+game.gridSize; i += game.gridSize*game.zoomLevel) {
+		//Calculate Zoom Displacement
+		var zoomAdditionY = 0;
+		var zoomAdditionX = 0;
+		if (i-modifiedStartY+changeY < game.zoomReference.y) zoomAdditionY = -1*changeY;
+		else if (i-modifiedStartY+changeY > game.zoomReference.y) zoomAdditionY = changeY;
+		else if (i-modifiedStartY+changeY == game.zoomReference.y) alert("TEST");
+		
+		if (i-modifiedStartX < game.zoomReference.x) zoomAdditionX = -1*changeX;
+		else if (i-modifiedStartX > game.zoomReference.x) zoomAdditionX = changeX;
+		
 		context.beginPath();
-		context.moveTo(0,i-modifiedStartY);
-		context.lineTo(canvas.width, i-modifiedStartY);
+		context.moveTo(0,i-modifiedStartY+zoomAdditionY);
+		context.lineTo(canvas.width, i-modifiedStartY+zoomAdditionY);
 		context.stroke();
 		context.beginPath();
-		context.moveTo(i-modifiedStartX,0);
-		context.lineTo(i-modifiedStartX, canvas.width);
+		context.moveTo(i-modifiedStartX+zoomAdditionX,0);
+		context.lineTo(i-modifiedStartX+zoomAdditionX, canvas.width);
 		context.stroke();
+		//if (zoomAdditionY != 0) document.getElementById("moredebug").innerHTML += i + ": " + zoomAdditionX + ", " + zoomAdditionY + "<br/>";
 	}
 	for (var i = 0; i < barriers.length; i++) {
 		game.square(barriers[i].initX-game.topLeftX, barriers[i].initY-game.topLeftY, barriers[i].incr, barriers[i].incr, "#000000");
