@@ -138,6 +138,8 @@ game = {
 	gameWidth: 500,
 	gameHeight: 500,
 	zoomReference: {x:250, y:250},
+	unitChangeX: 0,
+	unitChangeY: 0,
 	//clickStart: 0,
 	//clickEnd: 0,
 	
@@ -226,11 +228,14 @@ game = {
 
 	update: function() {
 		game.clear();
-		var unitChangeX = 0;
-		var unitChangeY = 0;
+		game.unitChangeX = 0;
+		game.unitChangeY = 0;
 		if (keyArray[5]==1 || keyArray[6]==1) {
-			unitChangeX = (game.zoomReference.x*0.01)/(game.zoomLevel*(game.zoomLevel+0.01));
-			unitChangeY = (game.zoomReference.y*0.01)/(game.zoomLevel*(game.zoomLevel+0.01));
+			game.unitChangeX = (game.zoomReference.x*0.01)/(game.zoomLevel*(game.zoomLevel+0.01));
+			game.unitChangeY = (game.zoomReference.y*0.01)/(game.zoomLevel*(game.zoomLevel+0.01));
+			
+			game.unitChangeX = Math.round(game.unitChangeX*100)/100;
+			game.unitChangeY = Math.round(game.unitChangeY*100)/100;
 		}
 		
 		if (keyArray[1]==1 && (game.topLeftY + game.gameHeight) < game.mapHeight) game.topLeftY+=2;
@@ -240,16 +245,16 @@ game = {
 	    if (keyArray[5]==1 && game.zoomLevel < 10) {
 			//Zoom in
 			game.zoomLevel += 0.01;
-			game.topLeftX += unitChangeX;
-			game.topLeftY += unitChangeY;
+			game.topLeftX += game.unitChangeX;
+			game.topLeftY += game.unitChangeY;
 		} else if (keyArray[6]==1 && game.zoomLevel > 0) {
 			//Zoom out
 			game.zoomLevel -= 0.01;
-			game.topLeftX -= unitChangeX;
-			game.topLeftY -= unitChangeY;
+			game.topLeftX -= game.unitChangeX;
+			game.topLeftY -= game.unitChangeY;
 		}
 	    
-		maintainZoom(unitChangeX, unitChangeY);
+		maintainZoom(game.unitChangeX, game.unitChangeY);
 		if (game.drawSelection) {
 			context.globalAlpha = 0.1;
 			var deltaX = game.mouseLocation.x - game.mouseOrigin.x;
@@ -364,7 +369,7 @@ Player.prototype.update = function() {
 	this.highlightClose();	
 	//if (!this.circle) {
 		this.render();
-		game.circle(this.posX-game.topLeftX, this.posY-game.topLeftY, 2, '#FF0000');
+		game.circle(this.posX-game.topLeftX+game.unitChangeX, this.posY-game.topLeftY+game.unitChangeY, 2*game.zoomLevel, '#FF0000');
 	//} else game.circle(this.posX, this.posY, this.size/2, '#00FF00');
 	
 	if (this.mouse) {
@@ -555,15 +560,15 @@ function maintainZoom(changeX, changeY) {
 	var newWinSize = game.windowSize * game.zoomLevel;
 	var modifiedStartX = game.topLeftX - game.gridSize*Math.floor(game.topLeftX/game.gridSize);
 	var modifiedStartY = game.topLeftY - game.gridSize*Math.floor(game.topLeftY/game.gridSize);
-	//if (changeY != 0) document.getElementById("moredebug").innerHTML = "";
+	if (changeY != 0) document.getElementById("moredebug").innerHTML = "";
 	//alert(modifiedStartX);
 	for (var i = 0; i < canvas.width+game.gridSize; i += game.gridSize*game.zoomLevel) {
 		//Calculate Zoom Displacement
 		var zoomAdditionY = 0;
 		var zoomAdditionX = 0;
-		if (i-modifiedStartY+changeY < game.zoomReference.y) zoomAdditionY = -1*changeY;
-		else if (i-modifiedStartY+changeY > game.zoomReference.y) zoomAdditionY = changeY;
-		else if (i-modifiedStartY+changeY == game.zoomReference.y) alert("TEST");
+		if (i-modifiedStartY < game.zoomReference.y) zoomAdditionY = -1*changeY;
+		else if (i-modifiedStartY > game.zoomReference.y) zoomAdditionY = changeY;
+		//else if (i-modifiedStartY+changeY == game.zoomReference.y) alert("TEST");
 		
 		if (i-modifiedStartX < game.zoomReference.x) zoomAdditionX = -1*changeX;
 		else if (i-modifiedStartX > game.zoomReference.x) zoomAdditionX = changeX;
@@ -576,7 +581,10 @@ function maintainZoom(changeX, changeY) {
 		context.moveTo(i-modifiedStartX+zoomAdditionX,0);
 		context.lineTo(i-modifiedStartX+zoomAdditionX, canvas.width);
 		context.stroke();
-		//if (zoomAdditionY != 0) document.getElementById("moredebug").innerHTML += i + ": " + zoomAdditionX + ", " + zoomAdditionY + "<br/>";
+		if (zoomAdditionY != 0) {
+			document.getElementById("moredebug").innerHTML += i + ": " + zoomAdditionX + ", " + zoomAdditionY + " !! " + modifiedStartX + ", " + modifiedStartY + "<br/>";
+			document.getElementById("moredebug").innerHTML += i + ": " + (i-modifiedStartY) + ", " + (i-modifiedStartX) + "<br/>";
+		}
 	}
 	for (var i = 0; i < barriers.length; i++) {
 		game.square(barriers[i].initX-game.topLeftX, barriers[i].initY-game.topLeftY, barriers[i].incr, barriers[i].incr, "#000000");
