@@ -1,7 +1,7 @@
 var canvas = document.getElementById("background");
 var context= canvas.getContext("2d");
 
-var keyArray = [0, 0, 0, 0, 0];
+var keyArray = [0, 0, 0, 0, 0, 0, 0];
 var gridArray = new Array();
 /*
 	Where 0 = 87/W
@@ -90,7 +90,7 @@ So total conversion:
 	=> coord.x/50 + coord.y/5
 */
 
-var map = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+var map = [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 	   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 	   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 	   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -117,9 +117,7 @@ function constructGrid() {
 			gridArray.push(new Grid(x*game.gridSize,y*game.gridSize,game.gridSize, true));
 		}
 	}
-	for (var i = 0; i < gridArray.length; i++) if (map[i]==1) {
-		gridArray[i].makeBarrier();
-	}
+	for (var i = 0; i < gridArray.length; i++) if (map[i]==1) gridArray[i].makeBarrier();
 };
 
 game = {
@@ -227,6 +225,14 @@ game = {
 
 	update: function() {
 		game.clear();
+		
+		if (keyArray[1]==1 && (game.topLeftY + game.gameHeight) < game.mapHeight) game.topLeftY+=2;
+	    if (keyArray[0]==1 && game.topLeftY > 0) game.topLeftY-=2;
+	    if (keyArray[3]==1 && game.topLeftX > 0) game.topLeftX-=2;
+	    if (keyArray[2]==1 && (game.topLeftX + game.gameWidth) < game.mapWidth) game.topLeftX+=2;
+	    if (keyArray[5]==1 && game.zoomLevel < 10) game.zoomLevel += 0.01;
+	    if (keyArray[6]==1 && game.zoomLevel > 0) game.zoomLevel -= 0.01;
+	    
 		maintainZoom();
 		if (game.drawSelection) {
 			context.globalAlpha = 0.1;
@@ -333,7 +339,7 @@ Player.prototype.updateCorners = function() {
 };
 
 Player.prototype.update = function() {
-	this.newGrid = parseInt(this.posX/50,10) + parseInt(this.posY/50,10)*20;
+	this.newGrid = parseInt((this.posX)/50,10) + parseInt((this.posY)/50,10)*20;
 	if (this.newGrid != this.currentGrid) {
 		gridArray[this.newGrid].add(this);
 		gridArray[this.currentGrid].remove(this);
@@ -344,10 +350,7 @@ Player.prototype.update = function() {
 		this.render();
 		game.circle(this.posX-game.topLeftX, this.posY-game.topLeftY, 2, '#FF0000');
 	//} else game.circle(this.posX, this.posY, this.size/2, '#00FF00');
-	if (keyArray[1]==1 && (game.topLeftY + game.gameHeight) < game.mapHeight) game.topLeftY++;
-	if (keyArray[0]==1 && game.topLeftY > 0) game.topLeftY--;
-	if (keyArray[3]==1 && game.topLeftX > 0) game.topLeftX--;
-	if (keyArray[2]==1 && (game.topLeftX + game.gameWidth) < game.mapWidth) game.topLeftX++;
+	
 	if (this.mouse) {
 /*		if(this.confused){
 			this.turn(this.deltaAngle);
@@ -415,7 +418,7 @@ Player.prototype.highlightClose = function() {
 	var inX = (this.posX%game.gridSize);
 	var inY = (this.posY%game.gridSize);
 	var yComp = parseInt(this.currentGrid/20,10);
-	var xComp = this.currentGrid ;
+	var xComp = this.currentGrid%20;
 	/*
 	 * | 7 0 1 |
 	 * | 6 H 2 |
@@ -611,12 +614,16 @@ function processKey(e) {
 	else if (e.keyCode == 68) keyArray[2]=1;	//D
 	else if (e.keyCode == 65) keyArray[3]=1;	//A
 	else if (e.keyCode == 49) keyArray[4]=1;	//1
+	else if (e.keyCode == 81) keyArray[5]=1;    //Q (Zoom in)
+	else if (e.keyCode == 69) keyArray[6]=1;    //E (Zoom out)
 };
 function processKeyUp(e) {
 	if (e.keyCode == 87) keyArray[0]=0;
 	else if (e.keyCode == 83) keyArray[1]=0;
 	else if (e.keyCode == 68) keyArray[2]=0;
 	else if (e.keyCode == 65) keyArray[3]=0; 
+	else if (e.keyCode == 81) keyArray[5]=0;    //Q (Zoom in)
+	else if (e.keyCode == 69) keyArray[6]=0;    //E (Zoom out)
 };
 
 function relMouseCoord(e) {
